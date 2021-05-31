@@ -2,7 +2,7 @@
 signs = [-1, 1];
 nudge = -0.3;
 
-module filleted_cuboid_centered(dims, r, $fn = 2) {
+module filleted_cuboid_centered(dims, r, $fn) {
 	dia = r * 2.0;
 
 	fn = $fn * 4.0;
@@ -70,8 +70,48 @@ module filleted_cuboid_centered(dims, r, $fn = 2) {
 	};
 }
 
-fn = 8;
-filleted_cuboid_centered([24, 16, 4], 1, $fn = fn);
+
+
+module filleted_cylinder_centered(radius, height, edge_radius, fn_radial, fn_edge) {
+	radial_remainder = radius - edge_radius;
+	assert(radial_remainder >= 0);
+
+	hoffset = height*0.5 - edge_radius;
+	assert(hoffset >= 0);
+
+	rotate_extrude($fn = fn_radial) {
+		union() {
+			intersection() {
+				// rotate_extrude can't handle anything 2D that hits negative X coordinates.
+				// hence the intersection to bound it in case the circle reaches there.
+				// the precise size isn't important and just needs to be >= the circle
+				// (in the +X quadrants only).
+				translate([0,-height]) square([radius,2*height]);
+
+				// note for() is an implied union of each iteration here.
+				// otherwise an explicit union would have been used inside the intersection.
+				for (y = [-hoffset, hoffset]) {
+					translate([radial_remainder,y]) {
+						circle(r = edge_radius, $fn = fn_edge * 4);
+					}
+				}
+			}
+
+			translate([0,-0.5*height]) {
+				square([radial_remainder, height]);
+			}
+			translate([0,-hoffset]) {
+				square([radius, 2*hoffset]);
+			}
+		}
+	}
+}
+
+
+
+fn = 4;
+//filleted_cuboid_centered([24, 16, 4], 1, $fn = fn);
+filleted_cylinder_centered(4, 4, 0.5, 32, fn);
 
 
 
